@@ -1,0 +1,37 @@
+name: DeploySageMakerModel
+
+on: workflow_dispatch
+
+env:
+  AWS_REGION: us-east-2
+  SAGEMAKER_PROJECT_NAME: sagemaker-github
+  EXPORT_TEMPLATE_STAGING_CONFIG: "staging-config-export.json"
+  EXPORT_TEMPLATE_PROD_CONFIG: "prod-config-export.json"
+
+jobs:
+  StagingDeploy:
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: staging
+      stack-name: github-stg
+      config-file: staging-config-export.json
+      build-configs: true
+      enable-rollback: false
+      aws-region: us-east-2
+      sagemaker-project-name: sagemaker-github
+    secrets:
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+
+  ProductionDeploy:
+    needs: StagingDeploy
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: production
+      stack-name: github-prd
+      config-file: prod-config-export.json
+      build-configs: false
+      enable-rollback: true
+      aws-region: us-east-2
+      sagemaker-project-name: sagemaker-github
+    secrets:
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
